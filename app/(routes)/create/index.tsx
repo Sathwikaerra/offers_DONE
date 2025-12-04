@@ -50,6 +50,9 @@ export const CreateAdScreen = () => {
 
   
  const [currentUser,setCurrentUser]=useState<any>(null)
+ const [Freetrail,setFreeTrail]=useState<any>(null)
+const [trailexp,setFreeTrailExpire]=useState<any>(null)
+
 
 
 const fetchUserDetails = async () => {
@@ -60,6 +63,9 @@ const fetchUserDetails = async () => {
     // ✅ Call fetchData (it should auto-handle headers if you coded it that way)
     const data = await fetchData("/user/v1/current");
     setCurrentUser(data)
+    setFreeTrail(data?.freeTrial?.status)
+    setFreeTrailExpire(data?.freeTrial?.expiryDate)
+ 
 
     
     return data;
@@ -164,7 +170,26 @@ const fetchUserDetails = async () => {
     ) : (
     <SafeAreaView style={{ flex: 1, position: 'relative', backgroundColor: COLORS.white }}>
       {!selectedOption ? (
+
         <View style={styles.optionsContainer}>
+            <View style={{
+                backgroundColor: '#60a5fa',
+                padding: 15,
+                borderRadius: 15,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 4,
+                elevation: 3,
+              }}>
+                <Text style={{ fontFamily: FONT.bold, fontSize: 18, color: '#fff', marginBottom: 5 }}>
+                  Free Trial Active
+                </Text>
+                <Text style={{ fontFamily: FONT.medium, fontSize: 14, color: '#f0f0f0' }}>
+                  Ends on {currentUser?.freeTrial?.expiryDate ? new Date(currentUser.freeTrial.expiryDate).toLocaleDateString() : 'N/A'}
+                </Text>
+              </View>
+          
           <Text style={styles.headerText}>What would you like to create?</Text>
           <TouchableOpacity
             style={styles.optionButton}

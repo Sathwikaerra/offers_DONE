@@ -35,9 +35,11 @@ const three = () => {
             Alert.alert('Error', error.response.data.message)
         }
     }
-    useEffect(() => {
+  useFocusEffect(
+    React.useCallback(() => {
         getCurrentUserDetails();
-    }, [currentUser])
+    }, [])
+);
 
     useLayoutEffect(() => {
         navigation.setOptions({

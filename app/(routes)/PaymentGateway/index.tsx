@@ -14,6 +14,8 @@ import axios from "axios";
 import { BACKEND_URL } from "@/constants/theme";
 import { postData } from "@/lib/axiosUtility";
 import { router } from "expo-router";
+import { RAZORPAY_KEY } from "@env";
+import { Bold } from "lucide-react-native";
 
 interface Plan {
   id: number;
@@ -25,30 +27,49 @@ interface Plan {
 
 const PaymentScreen: React.FC = () => {
   const [plans, setPlans] = useState<Plan[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [plansLoading, setPlansLoading] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [confirmVisible, setConfirmVisible] = useState(false);
+
+  // 🔹 Custom alert state
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertType, setAlertType] = useState<"success" | "error" | "warning">(
+    "success"
+  );
+  const [alertMessage, setAlertMessage] = useState("");
+
+  // 🔹 Custom alert function
+  const showAlert = (
+    type: "success" | "error" | "warning",
+    message: string
+  ) => {
+    setAlertType(type);
+    setAlertMessage(message);
+    setAlertVisible(true);
+  };
 
   // Fetch plans from backend
   useEffect(() => {
     const fetchPlans = async () => {
+      setPlansLoading(true);
       try {
         const res = await axios.get(`${BACKEND_URL}/plans/v1/all`);
-        
-        console.log(res.data?.data)
-        if (res.data.ok)
-          {
-              setPlans(res.data?.data);
-          } 
+        if (res.data.ok) {
+          setPlans(res.data?.data);
+        }
       } catch (err) {
         console.error("Error fetching plans:", err);
+        showAlert("error", "❌ Failed to fetch plans. Please try again.");
+      } finally {
+        setPlansLoading(false);
       }
     };
     fetchPlans();
   }, []);
 
   const handlePayment = async (plan: Plan) => {
-    setLoading(true);
+    setPaymentLoading(true);
     let order;
 
     // 1️⃣ Create order
@@ -56,18 +77,18 @@ const PaymentScreen: React.FC = () => {
       const res = await postData(`/payments/v1/create-order`, {
         amount: plan.amount,
       });
-     order = res.order || res.data.order;
-
+      order = res.order || res.data.order;
       if (!order) throw new Error("Order not created");
     } catch (error) {
       console.error("Error creating order:", error);
-      setLoading(false);
+      showAlert("error", "❌ Failed to create payment order.");
+      setPaymentLoading(false);
       return;
     }
 
     // 2️⃣ Razorpay options
     const options = {
-      key: "rzp_test_RLKMqkAfF2WtPo",
+      key: RAZORPAY_KEY,
       amount: order.amount,
       currency: order.currency,
       name: "Offersholic",
@@ -78,7 +99,7 @@ const PaymentScreen: React.FC = () => {
         email: "user@example.com",
         contact: "9999999999",
       },
-      theme: { color: "#F37254" },
+      theme: { color: "#4CAF50" },
     };
 
     try {
@@ -91,86 +112,130 @@ const PaymentScreen: React.FC = () => {
         razorpay_signature: data.razorpay_signature,
       });
 
-      console.log(verifyRes)
       if (verifyRes.success) {
         // 4️⃣ Start membership
         const membershipRes = await postData(`/user/v1/start-membership`, {
           planType: plan.period,
         });
 
-
-        if (membershipRes.membership.status==='active') {
-          alert("✅ Membership Activated!");
-          router.push("/(drawer)/(tabs)/create")
+        if (membershipRes.membership.status === "active") {
+          showAlert("success", "✅ Membership Activated!");
+          router.push("/(drawer)/(tabs)/create");
         } else {
-          alert("⚠️ Payment done but failed to activate membership.");
+          showAlert(
+            "warning",
+            "⚠️ Payment done but failed to activate membership."
+          );
         }
       } else {
-        alert("⚠️ Payment verification failed!");
+        showAlert("error", "⚠️ Payment verification failed!");
       }
     } catch (error) {
       console.error("Error in checkout:", error);
-      alert("❌ Payment failed.");
+      showAlert("error", "❌ Payment failed.");
     } finally {
-      setLoading(false);
+      setPaymentLoading(false);
       setConfirmVisible(false);
     }
   };
+
+  // Show loader if fetching plans
+  if (plansLoading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="#F37254" />
+<Text style={{ marginTop: 10, fontWeight: "700" }}>Loading plans...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Choose a Plan</Text>
 
-      {loading && <ActivityIndicator size="large" color="#F37254" />}
+      {paymentLoading && (
+        <ActivityIndicator
+          size="large"
+          color="#F37254"
+          style={{ marginVertical: 20 }}
+        />
+      )}
 
-     <FlatList
-  data={plans}
-  keyExtractor={(item) => item._id.toString()}
-  renderItem={({ item }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => {
-        setSelectedPlan(item); // full plan
-        setConfirmVisible(true);
-      }}
-    >
-      <Text style={styles.planName}>{item.name}</Text>
-      <Text style={styles.planAmount}>₹{item.amount}</Text>
-      <Text style={styles.planDesc}>{item.description}</Text>
-    </TouchableOpacity>
-  )}
-/>
+      <FlatList
+        data={plans}
+        keyExtractor={(item) => item._id.toString()}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() => {
+              setSelectedPlan(item);
+              setConfirmVisible(true);
+            }}
+          >
+            <Text style={styles.planName}>{item.name}</Text>
+            <Text style={styles.planAmount}>₹{item.amount}</Text>
+            <Text style={styles.planDesc}>{item.description}</Text>
+          </TouchableOpacity>
+        )}
+      />
 
-<Modal
-  transparent
-  visible={confirmVisible}
-  animationType="fade"
-  onRequestClose={() => setConfirmVisible(false)}
->
-  <View style={styles.modalOverlay}>
-    <View style={styles.modalBox}>
-      <Text style={styles.modalText}>
-        Confirm purchase of {selectedPlan?.name}?{"\n\n"}
-        {selectedPlan?.description}
-      </Text>
-      <View style={styles.modalButtons}>
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: "gray" }]}
-          onPress={() => setConfirmVisible(false)}
-        >
-          <Text style={styles.buttonText}>Cancel</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: "#F37254" }]}
-          onPress={() => selectedPlan && handlePayment(selectedPlan)}
-        >
-          <Text style={styles.buttonText}>Confirm</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  </View>
-</Modal>
+      {/* Confirm Purchase Modal */}
+      <Modal
+        transparent
+        visible={confirmVisible}
+        animationType="fade"
+        onRequestClose={() => setConfirmVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalText}>
+              Confirm purchase of {selectedPlan?.name}?{"\n\n"}
+              {selectedPlan?.description}
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.button, { backgroundColor: "gray" }]}
+                onPress={() => setConfirmVisible(false)}
+              >
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, { backgroundColor: "#F37254" }]}
+                onPress={() => selectedPlan && handlePayment(selectedPlan)}
+              >
+                <Text style={styles.buttonText}>Confirm</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
+      {/* Custom Alert Modal */}
+      <Modal
+        transparent
+        visible={alertVisible}
+        animationType="fade"
+        onRequestClose={() => setAlertVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View
+            style={[
+              styles.alertBox,
+              alertType === "success" && { borderLeftColor: "green" },
+              alertType === "error" && { borderLeftColor: "red" },
+              alertType === "warning" && { borderLeftColor: "orange" },
+            ]}
+          >
+            <Text style={styles.alertMessage}>{alertMessage}</Text>
+            <TouchableOpacity
+              style={styles.alertButton}
+              onPress={() => setAlertVisible(false)}
+            >
+              <Text style={styles.alertButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -179,12 +244,24 @@ export default PaymentScreen;
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: "#fff" },
-  header: { fontSize: 22, fontWeight: "700", marginBottom: 20, textAlign: "center" },
+  header: {
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: 30,
+    marginTop: 45,
+    textAlign: "center",
+  },
   card: {
+    display:'flex',
+    justifyContent:'center',
+    alignItems:'center',
     padding: 20,
+    gap:15,
     marginBottom: 15,
     borderRadius: 12,
     backgroundColor: "#f9f9f9",
+    width:290,
+    margin:'auto',
     elevation: 3,
   },
   planName: { fontSize: 18, fontWeight: "600" },
@@ -213,4 +290,37 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  // 🔹 Custom Alert Styles
+  alertBox: {
+    width: "80%",
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 12,
+    elevation: 5,
+    borderLeftWidth: 6,
+    alignItems: "center",
+  },
+  alertMessage: {
+    fontSize: 16,
+    marginBottom: 15,
+    textAlign: "center",
+    color: "#333",
+  },
+  alertButton: {
+    backgroundColor: "#F37254",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  alertButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 16,
+  },
 });

@@ -191,6 +191,7 @@ import { PremimumCreateAdScreen } from "../../(routes)/Pcreate/index";
 import { Gift, CreditCard } from 'lucide-react-native';
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
+import {CreateAdScreen} from "../../(routes)/create/index"
 
 const SubscriptionScreen = () => {
   const router = useRouter();
@@ -242,16 +243,22 @@ const SubscriptionScreen = () => {
   const freeTrialStatus = user?.freeTrial?.status || "inactive";
   const membershipStatus = user?.membership?.status || "inactive";
 
-  if (freeTrialStatus === "active" || membershipStatus === "active") {
+  if ( membershipStatus === "active" && freeTrialStatus==='expired') {
     return <PremimumCreateAdScreen />;
+  }
+
+  if(freeTrialStatus === "active" && membershipStatus==='inactive')
+  {
+    return <CreateAdScreen />;
   }
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>✨ Subscription Options ✨</Text>
 
-      {/* Free Trial Option */}
-      {freeTrialStatus === "expired" && membershipStatus==='inactive' && (
+     
+       {/* Free Trial Option */}
+      {freeTrialStatus === "expired" && (
         <Text style={styles.expiredText}>⏳ Free trial expired</Text>
       )} 
       {freeTrialStatus === "inactive" && (

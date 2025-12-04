@@ -45,9 +45,7 @@ import Input from '@/components/ui/Input';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { BottomSheetFlatList } from "@gorhom/bottom-sheet";
-import Constants from 'expo-constants';
-
-const GOOGLE_API_KEY = Constants.expoConfig?.android?.config?.googleMaps?.apiKey;
+import {GOOGLE_API_KEY} from '@env'
 
 
 

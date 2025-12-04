@@ -12,6 +12,7 @@ import BottomSheet from '@gorhom/bottom-sheet/lib/typescript/components/bottomSh
 import { BottomSheetComponent } from '@/components/bottomSheetComponent';
 import { Button } from '@/components/ui/Button';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState } from 'react';
 
 const index = () => {
     const navigation = useNavigation();
@@ -38,6 +39,19 @@ const index = () => {
         (props: any) => <BottomSheetBackdrop appearsOnIndex={0} disappearsOnIndex={-1} {...props} />,
         []
     );
+
+    const [user,setUser]=useState<any>()
+
+    const fetchUserDetails = async () => {
+        try {
+          const data = await fetchData("/user/v1/current");
+          setUser(data);
+        } catch (error: any) {
+          console.error("Error fetching user details:", error.message);
+        } finally {
+          setLoading(false);
+        }
+      };
 
     const getAllBusinessProfiles = async () => {
         try {
@@ -76,6 +90,7 @@ const index = () => {
 
     useEffect(() => {
         setLoading(true);
+        fetchUserDetails()
         getAllBusinessProfiles();
         getAds().then(() => {
             setLoading(false);
@@ -134,6 +149,9 @@ const index = () => {
             console.log(error.response.data.message);
         }
     }
+
+
+
     return (
         loading ? <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
             <ActivityIndicator size="large" color={COLORS.primary} />

@@ -27,7 +27,7 @@ const ClarificationRequests = () => {
         setLoading(true)
         try {
             const res = await fetchData(`/offer/v1/get/all/clarification-requested`)
-            setClarificationOffers(res)
+            setClarificationOffers(res) 
            
         } catch (error) {
             console.log(error?.response?.data?.message)

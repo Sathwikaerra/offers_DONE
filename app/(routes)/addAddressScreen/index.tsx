@@ -28,8 +28,8 @@ import BottomSheet, { BottomSheetBackdrop } from "@gorhom/bottom-sheet";
 import { BottomSheetComponent } from "@/components/bottomSheetComponent";
 import MapView, { Region } from "react-native-maps";
 import * as Location from "expo-location";
+import {GOOGLE_API_KEY} from '@env'
 
-const GOOGLE_API_KEY = "AIzaSyBeU_J6jaVHmuBARmjYo6ljkEVxLC4mt58"; // replace with your key
 const HYD = { latitude: 17.385044, longitude: 78.486671 };
 const DEFAULT_DELTA = { latitudeDelta: 0.01, longitudeDelta: 0.01 };
 

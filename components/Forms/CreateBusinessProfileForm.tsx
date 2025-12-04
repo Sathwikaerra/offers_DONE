@@ -11,7 +11,7 @@ import CategoriesCard from '../Create/CategoriesCard';
 import * as ImagePicker from 'expo-image-picker';
 import { CheckBadgeIcon } from 'react-native-heroicons/solid';
 import DropdownComponent from '../ui/dropdown';
-import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
+import { getDownloadURL, ref,uploadBytes, uploadBytesResumable } from 'firebase/storage';
 import { storage } from '@/firebase/config';
 import { router } from 'expo-router';
 import { BottomSheetComponent } from '../bottomSheetComponent';
@@ -165,6 +165,35 @@ const CreateBusinessProfileForm: React.FC = () => {
 
     const [selectedImages, setSelectedImages] = useState<string[]>([]);
     const [uploadedImages, setUploadedImages] = useState<any[]>([]);
+
+    const [proofType, setProofType] = useState("gstin");
+const [proofImage, setProofImage] = useState("");
+
+const pickAndUploadImage = async () => {
+  try {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      const response = await fetch(result.assets[0].uri);
+      const blob = await response.blob();
+      const filename = `proofs/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+      const storageRef = ref(storage, filename);
+
+      await uploadBytes(storageRef, blob);
+      const downloadURL = await getDownloadURL(storageRef);
+      setProofImage(downloadURL);
+
+      Alert.alert("Success", "Image uploaded successfully!");
+    }
+  } catch (error) {
+    console.error("Error uploading image: ", error);
+    Alert.alert("Error", "Image upload failed. Try again.");
+  }
+};
 
     const onPickImage = async () => {
         try {
@@ -327,6 +356,7 @@ const CreateBusinessProfileForm: React.FC = () => {
             description,
             GSTIN,
             offers,
+            proofImage,
             website,
             phoneNumber,
             email,
@@ -362,11 +392,18 @@ const CreateBusinessProfileForm: React.FC = () => {
             snapToIndex(0);
             return;
         }
-        if (!GSTIN) {
-            setError('Please enter a valid GSTIN');
-            snapToIndex(0);
-            return;
-        }
+        
+if (proofType === 'gstin' && !GSTIN) {
+  setError('Please enter a valid GSTIN');
+  snapToIndex(0);
+  return;
+}
+
+if (proofType === 'image' && !proofImage) {
+  setError('Please upload a proof image');
+  snapToIndex(0);
+  return;
+}
         if (!location) {
             setError('Please select an address');
             snapToIndex(0);
@@ -392,8 +429,8 @@ const CreateBusinessProfileForm: React.FC = () => {
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.white, margin: 20, gap: 20 }}>
                 <CheckBadgeIcon size={100} color={COLORS.primary} />
                 <View style={{ flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 2 }}>
-                    <Text style={{ fontFamily: FONT.bold, fontSize: 24, color: COLORS.primary }}>Business Profile Created</Text>
-                    <Text style={{ fontFamily: FONT.regular, fontSize: SIZES.small, color: COLORS.gray }}>Your business profile has been created successfully.</Text>
+                    <Text style={{ fontFamily: FONT.bold, fontSize: 24, color: COLORS.primary }}>Business Profile created</Text>
+                    <Text style={{ fontFamily: FONT.regular, fontSize: SIZES.small, color: COLORS.gray }}>Please wait for the confirmation</Text>
                 </View>
                 <Button label="Go to My Businesses" variant="default" onPress={() => router.push('/(routes)/myBusinessProfiles')} />
             </View>
@@ -434,52 +471,196 @@ const CreateBusinessProfileForm: React.FC = () => {
                         />
                     )}
 
-                    {currentStep === 2 && (
-                        <View style={{ marginBottom: 200 }}>
-                            <Input label required
-                                message="Business Name must match the legal name or brand name on GSTIN."
-                                labelTitle="Enter Business Name" placeholder='e.g. XYZ Business' value={name} onChangeText={(value) => setName(value)} />
-                            <Input type='description' label labelTitle="Enter Business Description" placeholder='e.g. Leading edge solutions.' value={description} onChangeText={(value) => setDescription(value)} />
-                            <Input label required labelTitle="Enter GSTIN" placeholder='e.g. 27AAEPM0111C1Z' value={GSTIN} onChangeText={(value) => setGSTIN(value)} />
-                            <DropdownComponent
-                                required
-                                isAddressType label="Select Address"
-                                data={Addresses as any}
-                                value={location}
-                                onChange={(item) => {
-                                   
-                                    setLocation(item?.value)
-                                }
-                                }
-                            />
-                            <Input label labelTitle="Website" placeholder='e.g. https://www.abcd.com' value={website} onChangeText={(value) => setWebsite(value)} />
-                            <Input label required labelTitle="Phone Number" type='phone' placeholder='e.g. +1-234-567-890' value={phoneNumber} onChangeText={(value) => setPhoneNumber(value)} />
-                            <Input label required labelTitle="Email" type='email' placeholder='e.g. info@abcd.com' value={email} onChangeText={(value) => setEmail(value)} />
-                            <Input label labelTitle="Facebook" placeholder='e.g. facebook.com/abcd' value={socialMedia.facebook} onChangeText={(value) => setSocialMedia({ ...socialMedia, facebook: value })} />
-                            <Input label labelTitle="Twitter" placeholder='e.g. twitter.com/abcd' value={socialMedia.twitter} onChangeText={(value) => setSocialMedia({ ...socialMedia, twitter: value })} />
-                            <Input label labelTitle="LinkedIn" placeholder='e.g. linkedin.com/company/abcd' value={socialMedia.linkedin} onChangeText={(value) => setSocialMedia({ ...socialMedia, linkedin: value })} />
-                            <Input label labelTitle="Instagram" placeholder='e.g. instagram.com/abcd' value={socialMedia.instagram} onChangeText={(value) => setSocialMedia({ ...socialMedia, instagram: value })} />
+                   {currentStep === 2 && (
+  <View style={{ marginBottom: 200 }}>
+    <Input
+      label
+      required
+      message="Business Name must match the legal name or brand name on GSTIN."
+      labelTitle="Enter Business Name"
+      placeholder="e.g. XYZ Business"
+      value={name}
+      onChangeText={(value) => setName(value)}
+    />
 
-                            <View style={{ width: '100%', flexDirection: 'row', justifyContent: 'space-between', gap: 6, alignItems: 'center', marginTop: 20 }}>
-                                <TouchableOpacity
-                                    onPress={() => onStepChange(1)}
-                                    activeOpacity={0.8}
-                                    style={{ width: '15%', height: '100%', borderRadius: 12, flexDirection: 'row', backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' }}
-                                >
-                                    <ChevronLeft size={24} color={COLORS.white} />
-                                </TouchableOpacity>
-                                <View style={{ width: '83%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <Button
-                                        label="Next"
-                                        variant="default"// Disable button if form is invalid
-                                        onPress={handleNextClick} // Validate when the user presses the button
-                                    />
-                                </View>
-                            </View>
+    <Input
+      type="description"
+      label
+      labelTitle="Enter Business Description"
+      placeholder="e.g. Leading edge solutions."
+      value={description}
+      onChangeText={(value) => setDescription(value)}
+    />
 
-                        </View>
+    {/* Toggle between GSTIN or Image */}
+    <DropdownComponent
+      required
+      label="Proof Type"
+      data={[
+        { label: "GSTIN", value: "gstin" },
+        { label: "Upload Proof Image", value: "image" },
+      ]}
+      value={proofType}
+      onChange={(item) => setProofType(item?.value)}
+    />
 
-                    )}
+    {proofType === "gstin" ? (
+      <Input
+        label
+        required
+        labelTitle="Enter GSTIN"
+        placeholder="e.g. 27AAEPM0111C1Z"
+        value={GSTIN}
+        onChangeText={(value) => setGSTIN(value)}
+      />
+    ) : (
+      <View>
+       <TouchableOpacity
+  onPress={pickAndUploadImage}
+  activeOpacity={0.8}
+  style={{
+    backgroundColor: '#e0f2fe',       // light blue background
+    borderColor: '#0284c7',           // deep blue border
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  }}
+>
+  <Text style={{ color: '#0284c7', fontWeight: '600', fontSize: 16 }}>
+    Pick Proof Image
+  </Text>
+</TouchableOpacity>
+        {proofImage ? (
+          <Image
+            source={{ uri: proofImage }}
+            style={{ width: 150, height: 150, marginTop: 10, borderRadius: 10 }}
+          />
+        ) : null}
+      </View>
+    )}
+
+    <DropdownComponent
+      required
+      isAddressType
+      label="Select Address"
+      data={Addresses as any}
+      value={location}
+      onChange={(item) => setLocation(item?.value)}
+    />
+
+    <Input
+      label
+      labelTitle="Website"
+      placeholder="e.g. https://www.abcd.com"
+      value={website}
+      onChangeText={(value) => setWebsite(value)}
+    />
+
+    <Input
+      label
+      required
+      labelTitle="Phone Number"
+      type="phone"
+      placeholder="e.g. +1-234-567-890"
+      value={phoneNumber}
+      onChangeText={(value) => setPhoneNumber(value)}
+    />
+
+    <Input
+      label
+      required
+      labelTitle="Email"
+      type="email"
+      placeholder="e.g. info@abcd.com"
+      value={email}
+      onChangeText={(value) => setEmail(value)}
+    />
+
+    {/* Social Media Inputs */}
+    <Input
+      label
+      labelTitle="Facebook"
+      placeholder="e.g. facebook.com/abcd"
+      value={socialMedia.facebook}
+      onChangeText={(value) =>
+        setSocialMedia({ ...socialMedia, facebook: value })
+      }
+    />
+
+    <Input
+      label
+      labelTitle="Twitter"
+      placeholder="e.g. twitter.com/abcd"
+      value={socialMedia.twitter}
+      onChangeText={(value) =>
+        setSocialMedia({ ...socialMedia, twitter: value })
+      }
+    />
+
+    <Input
+      label
+      labelTitle="LinkedIn"
+      placeholder="e.g. linkedin.com/company/abcd"
+      value={socialMedia.linkedin}
+      onChangeText={(value) =>
+        setSocialMedia({ ...socialMedia, linkedin: value })
+      }
+    />
+
+    <Input
+      label
+      labelTitle="Instagram"
+      placeholder="e.g. instagram.com/abcd"
+      value={socialMedia.instagram}
+      onChangeText={(value) =>
+        setSocialMedia({ ...socialMedia, instagram: value })
+      }
+    />
+
+    {/* Navigation Buttons */}
+    <View
+      style={{
+        width: "100%",
+        flexDirection: "row",
+        justifyContent: "space-between",
+        gap: 6,
+        alignItems: "center",
+        marginTop: 20,
+      }}
+    >
+      <TouchableOpacity
+        onPress={() => onStepChange(1)}
+        activeOpacity={0.8}
+        style={{
+          width: "15%",
+          height: "100%",
+          borderRadius: 12,
+          flexDirection: "row",
+          backgroundColor: COLORS.primary,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <ChevronLeft size={24} color={COLORS.white} />
+      </TouchableOpacity>
+
+      <View
+        style={{
+          width: "83%",
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <Button label="Next" variant="default" onPress={handleNextClick} />
+      </View>
+    </View>
+  </View>
+)}
 
                     {currentStep === 3 && (
                         <View style={{ flex: 1, marginBottom: 200, width: '100%' }}>

@@ -649,7 +649,7 @@ export const CreateAdvertiseForm: React.FC = () => {
                 <CheckBadgeIcon size={100} color={COLORS.primary} />
                 <View style={{ flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 2 }}>
                     <Text style={{ fontFamily: FONT.bold, fontSize: 24, color: COLORS.primary }}>Offer Ad Created</Text>
-                    <Text style={{ fontFamily: FONT.regular, fontSize: SIZES.small, color: COLORS.gray }}>Your offer ad has been created successfully.</Text>
+                    <Text style={{ fontFamily: FONT.regular, fontSize: SIZES.small, color: COLORS.gray }}>Your offer ad has been created wait for the approval thank you.</Text>
                 </View>
                 <Button label="Go to My Ads" variant="default" onPress={() => router.push('/(routes)/MyAds')} />
             </View>
@@ -830,86 +830,127 @@ export const CreateAdvertiseForm: React.FC = () => {
                             </View>
 
                             {/* Gallery Images Section */}
-                            <View style={{ marginBottom: 20 }}>
-                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                                    <Text style={{ fontFamily: FONT.bold, fontSize: 18 }}>
-                                        Gallery Images ({selectedImages.length}/10)
-                                    </Text>
-                                    <View style={{ flexDirection: 'row', gap: 10 }}>
-                                        {selectedImages.length > 0 && (
-                                            <Button 
-                                                label="Clear" 
-                                                variant="default" 
-                                                onPress={() => {
-                                                    setSelectedImages([]);
-                                                    setUploadedImages([]);
-                                                }} 
-                                                disabled={uploading} 
-                                            />
-                                        )}
-                                        {selectedImages.length < 10 && (
-                                            <Button 
-                                                label="Add Images" 
-                                                variant="default" 
-                                                onPress={galleryPickImage} 
-                                                disabled={uploading} 
-                                            />
-                                        )}
-                                    </View>
-                                </View>
+                           <View style={{ marginBottom: 20,marginTop:20 }}>
+  <View
+    style={{
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 10,
+      flexWrap: 'wrap', // ✅ allow wrapping if space is tight
+    }}
+  >
+    <Text style={{ fontFamily: FONT.bold, fontSize: 18 ,margin:6}}>
+      Gallery Images ({selectedImages.length}/10)
+    </Text>
 
-                                {uploadedImages.length > 0 && (
-                                    <FlatList
-                                        data={uploadedImages}
-                                        keyExtractor={(item, index) => index.toString()}
-                                        renderItem={({ item, index }) => renderMediaItem({ item, index, type: 'image' })}
-                                        horizontal
-                                        showsHorizontalScrollIndicator={false}
-                                        style={{ marginTop: 10 }}
-                                    />
-                                )}
-                            </View>
+    <View
+      style={{
+        flexDirection: 'row',
+        gap: 10,
+        flexShrink: 1,
+        flexWrap: 'wrap', // ✅ wrap buttons if needed
+        justifyContent: 'flex-end',
+      }}
+    >
+      {selectedImages.length > 0 && (
+        <Button
+          label="Clear"
+          variant="default"
+          onPress={() => {
+            setSelectedImages([]);
+            setUploadedImages([]);
+          }}
+          disabled={uploading}
+        />
+      )}
+      {selectedImages.length < 10 && (
+        <Button
+          label="Add Images"
+          variant="default"
+          onPress={galleryPickImage}
+          disabled={uploading}
+        />
+      )}
+    </View>
+  </View>
+
+  {uploadedImages.length > 0 && (
+    <FlatList
+      data={uploadedImages}
+      keyExtractor={(item, index) => index.toString()}
+      renderItem={({ item, index }) =>
+        renderMediaItem({ item, index, type: 'image' })
+      }
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={{ marginTop: 10 }}
+    />
+  )}
+</View>
+
 
                             {/* Gallery Videos Section */}
                             <View style={{ marginBottom: 20 }}>
-                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                                    <Text style={{ fontFamily: FONT.bold, fontSize: 18 }}>
-                                        Gallery Videos ({selectedVideos.length}/5)
-                                    </Text>
-                                    <View style={{ flexDirection: 'row', gap: 10 }}>
-                                        {selectedVideos.length > 0 && (
-                                            <Button 
-                                                label="Clear" 
-                                                variant="default" 
-                                                onPress={() => {
-                                                    setSelectedVideos([]);
-                                                    setUploadedVideos([]);
-                                                }} 
-                                                disabled={uploading} 
-                                            />
-                                        )}
-                                        {selectedVideos.length < 5 && (
-                                            <Button 
-                                                label="Add Videos" 
-                                                variant="default" 
-                                                onPress={pickVideos} 
-                                                disabled={uploading} 
-                                            />
-                                        )}
-                                    </View>
-                                </View>
+  <View
+    style={{
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 10,
+      flexWrap: 'wrap', // ✅ allows wrapping when space is tight
+    }}
+  >
+    <Text style={{ fontFamily: FONT.bold, fontSize: 18 ,margin:6}}>
+      Gallery Videos ({selectedVideos.length}/5)
+    </Text>
 
-                                {uploadedVideos.length > 0 && (
-                                    <FlatList
-                                        data={uploadedVideos}
-                                        keyExtractor={(item, index) => `video_${index}`}
-                                        renderItem={({ item, index }) => renderMediaItem({ item, index, type: 'video' })}
-                                        horizontal
-                                        showsHorizontalScrollIndicator={false}
-                                        style={{ marginTop: 10 }}
-                                    />
-                                )}
-                            </View>
+    <View
+      style={{
+        flexDirection: 'row',
+        gap: 10,
+        flexWrap: 'wrap', // ✅ wrap buttons if needed
+        justifyContent: 'flex-end',
+        flexShrink: 1,
+      }}
+    >
+      {selectedVideos.length > 0 && (
+        <Button
+          label="Clear"
+          variant="default"
+          onPress={() => {
+            setSelectedVideos([]);
+            setUploadedVideos([]);
+          }}
+          disabled={uploading}
+        />
+      )}
+
+      {selectedVideos.length < 5 && (
+        <Button
+          label="Add Videos"
+          variant="default"
+          onPress={pickVideos}
+          disabled={uploading}
+        />
+      )}
+    </View>
+  </View>
+
+  {uploadedVideos.length > 0 && (
+    <FlatList
+      data={uploadedVideos}
+      keyExtractor={(item, index) => `video_${index}`}
+      renderItem={({ item, index }) =>
+        renderMediaItem({ item, index, type: 'video' })
+      }
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={{ marginTop: 10 }}
+    />
+  )}
+</View>
+
 
                             {/* Upload Progress Indicator */}
                             {Object.keys(mediaUploadProgress).length > 0 && (

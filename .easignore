@@ -1,0 +1,10 @@
+../*          # ignore everything outside project
+node_modules/
+build/
+dist/
+.expo/
+.gradle/
+*.apk
+*.aab
+*.log
+*.env

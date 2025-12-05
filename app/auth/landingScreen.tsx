@@ -15,6 +15,7 @@ import { router, Stack, useNavigation } from "expo-router";
 import axios from "axios";
 import { useSession } from "@/provider/ctx";
 import Toast from "react-native-toast-message";
+import { getDevicePushToken } from "../../utils/notifications";
 
 const LoginWithOTP = () => {
   const navigation = useNavigation();
@@ -83,11 +84,14 @@ const LoginWithOTP = () => {
     }
 
     try {
+
       setLoading(true);
+      const deviceToken = await getDevicePushToken();
       const res = await axios.post(`${BACKEND_URL}/auth/v1/verify-otp`, {
         mobileNumber: mobile,
         otp,
         sessionId,
+        deviceToken,
       });
 
       const token = res.data.token;
